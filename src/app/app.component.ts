@@ -21,42 +21,38 @@ export class AppComponent implements OnInit {
     }
 
     ngOnInit(): void {
-        // this.nodeId = 0;
+        this.nodeId = 0;
         // this.createNodes(5);
-        this.translate(data.constructor === Array ? data: [data]);
+        this.nodes = [this.translate(data)];
     }
 
     translate(node: any, name?: string | number, root?: any) {
-        if (!node) {
-            return;
+        if (!node && node !== 0) {
+            return root;
         }
 
-        if ((!name && name !== 0) ||  !root) {
-            root = root || {};
-            root.name = "Root";
-            root.id = ++this.nodeId;
-            root.children = [];            
-        }
-
-        if (node.constructor === Array) {
-            root.name = name;
-            root.id = ++this.nodeId;
-            root.children = [];
-            node.forEach((item, index) => {
-                root = this.translate(item, index, root);
+        if (node.constructor !== Array && node.constructor !== Object) {
+            root.children.push({
+                name: name,
+                id: ++this.nodeId,
+                value: node,
+                children: []
             });
+            return root;
         }
 
-        if (node.constructor === Object) {
-            root.name = name;
-            root.id = ++this.nodeId;
-            root.children = [];
-            Object.keys(node).forEach((key,  index) => {
-                root = this.translate(node[key], key, root);
-            });
+        let newRoot = {
+            name: name || "Root",
+            id: ++this.nodeId,
+            children: []
+        };
+        Object.keys(node).forEach((key,  index) => {
+            newRoot = this.translate(node[key], key, newRoot);
+        });
+        if (!root) {
+            return newRoot;
         }
-
-        root.value = node;
+        root.children.push(newRoot);
         return root;
     }
 
