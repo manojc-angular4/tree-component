@@ -3,13 +3,15 @@
 </h1>
 <br>
 <div class="container">
-    <tree-root [nodes]="nodes" (event)="onEvent($event)">
+    <tree-root #tree [options]="options" [nodes]="nodes" (event)="onEvent($event)">
         <ng-template #treeNodeFullTemplate let-node let-index="index" let-templates="templates">
             <div class="tree-node" [class.tree-node-leaf]="node.isLeaf">
                 <div class="node-wrapper">
                     <div class="node-content-wrapper" [class.active]="node.isFocused">
-                        <tree-node-expander [node]="node"></tree-node-expander>
-                        <label for="id">{{node.data.name}}</label>
+                        <span (click)="!node.isLeaf && node.isExpanded ? node.collapse() : node.expand()">
+                            <span [class.expander]="!node.isLeaf" [class.expanded]="node.isExpanded"></span>
+                        </span>
+                        <span [class.leaf]="node.isLeaf" for="id">{{node.data[options.displayField]}}</span>
                         <input #checkbox type="checkbox" [checked]="node.data.isChecked" (change)="nodeChecked(node, checkbox.checked)">
                     </div>
                 </div>

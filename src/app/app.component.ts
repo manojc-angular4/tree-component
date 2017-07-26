@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { TreeNode } from "angular-tree-component";
+import { TreeNode, ITreeOptions } from "angular-tree-component";
+import { ITreeNode } from "angular-tree-component/dist/defs/api";
+
+import * as data from "./data.json";
 
 @Component({
     selector: 'app-root',
@@ -11,8 +14,50 @@ export class AppComponent implements OnInit {
     nodes = [];
     nodeId = 0;
 
+    options: ITreeOptions = {
+        displayField: "name",
+        idField: "id",
+        childrenField: "children"
+    }
+
     ngOnInit(): void {
-        this.createNodes(5);
+        // this.nodeId = 0;
+        // this.createNodes(5);
+        this.translate(data.constructor === Array ? data: [data]);
+    }
+
+    translate(node: any, name?: string | number, root?: any) {
+        if (!node) {
+            return;
+        }
+
+        if ((!name && name !== 0) ||  !root) {
+            root = root || {};
+            root.name = "Root";
+            root.id = ++this.nodeId;
+            root.children = [];            
+        }
+
+        if (node.constructor === Array) {
+            root.name = name;
+            root.id = ++this.nodeId;
+            root.children = [];
+            node.forEach((item, index) => {
+                root = this.translate(item, index, root);
+            });
+        }
+
+        if (node.constructor === Object) {
+            root.name = name;
+            root.id = ++this.nodeId;
+            root.children = [];
+            Object.keys(node).forEach((key,  index) => {
+                root = this.translate(node[key], key, root);
+            });
+        }
+
+        root.value = node;
+        return root;
     }
 
     nodeChecked(node, isChecked) {
@@ -23,7 +68,7 @@ export class AppComponent implements OnInit {
     updateChildren(node, isChecked) {
         node.data.isChecked = isChecked;
         if (node.hasChildren) {
-            node.children.forEach(child => this.updateChildren(child, isChecked));
+            node[this.options.childrenField].forEach(child => this.updateChildren(child, isChecked));
         }
     }
 
@@ -33,7 +78,7 @@ export class AppComponent implements OnInit {
         }
         let isChecked = true;
         if (node.hasChildren) {
-            node.children.forEach(child => isChecked = child.data.isChecked && isChecked);
+            node[this.options.childrenField].forEach(child => isChecked = child.data.isChecked && isChecked);
         }
         node.data.isChecked = isChecked;
         this.updateParent(node.parent);
@@ -42,7 +87,7 @@ export class AppComponent implements OnInit {
     onEvent(event) {
         if (event.node) {
             if (event.node.data) {
-                console.log(event.eventName, ' - ', event.node.data.id);
+                console.log(event.eventName, ' - ', event.node.data[this.options.idField]);
                 return;
             }
             console.log(event);
@@ -50,29 +95,22 @@ export class AppComponent implements OnInit {
     }
 
     createNodes(count: number) {
-        let nodes= [];
-        this.nodeId = 0;
+        let nodes = [];
+        this.nodeId = 1;
 
         for (var index = 0; index < count; index++) {
             let depth: number = Math.floor(Math.random() * 10);
-            while (depth < 2 ||  depth > 5) {
+            while (depth < 2 || depth > 5) {
                 depth = Math.floor(Math.random() * 10);
             }
 
-            let node = {
-                id: ++this.nodeId,
-                name: 'node  ' + this.nodeId
-            };
+            let node = this.buildNode('node  ' + this.nodeId, []);
 
-            node = this.addChildren(node,  depth);
+            node = this.addChildren(node, depth);
             nodes.push(node);
         }
-
-        this.nodes = [{
-            id: 0,
-            name: "Root Element",
-            children: nodes
-        }];
+        this.nodeId = -1;
+        this.nodes = [this.buildNode('Root Element', nodes)];
     }
 
     addChildren(node, depth): any {
@@ -81,22 +119,27 @@ export class AppComponent implements OnInit {
             return node;
         }
 
-        node.children = node.children || [];
+        node[this.options.childrenField] = node[this.options.childrenField] || [];
         let childNode: any;
-    
+
         let childCount: number = Math.floor(Math.random() * 10);
         while (childCount < 6 || childCount > 6) {
             childCount = Math.floor(Math.random() * 10);
         }
 
         for (var child = 0; child < childCount; child++) {
-            childNode = {
-                id: ++this.nodeId,
-                name: 'node  ' + this.nodeId
-            };
+            childNode = this.buildNode('node  ' + this.nodeId, []);
             childNode = this.addChildren(childNode, depth - 1);
-            node.children.push(childNode);
+            node[this.options.childrenField].push(childNode);
         }
+        return node;
+    }
+
+    buildNode(name, nodes) {
+        let node: any = {};
+        node[this.options.displayField] = name;
+        node[this.options.idField] = ++this.nodeId;
+        node[this.options.childrenField] = nodes || [];
         return node;
     }
 }
